@@ -1,0 +1,40 @@
+*{
+    padding: 0;
+    margin: 0;
+}
+
+
+/* Dark mode styles for React Big Calendar */
+.dark .rbc-toolbar button {
+    color: white !important;
+    background-color: transparent !important;
+    border: none;
+}
+
+.dark .rbc-toolbar button:hover {
+    background-color: rgba(255, 255, 255, 0.2) !important;
+}
+
+.dark .rbc-toolbar-label {
+    color: white !important;
+}
+
+.dark .rbc-header {
+    background-color: #374151 !important; /* Tailwind gray-700 */
+    color: white !important;
+    font-weight: bold;
+}
+
+/* Weekday names */
+.dark .rbc-day-bg {
+    background-color: #1f2937 !important; /* Tailwind gray-800 */
+}
+
+.dark .rbc-today {
+    background-color: rgba(59, 130, 246, 0.2) !important; /* Light blue shade */
+}
+
+.dark .rbc-event {
+    background-color: #3b82f6 !important; /* Tailwind blue-500 */
+    color: white !important;
+}
