@@ -1,5 +1,6 @@
 import React, { useState, useRef, useContext } from 'react'
 import { TodoContext } from '../TodoContext';
+import Modal from './Modal';
 
 import Upcoming from './Upcoming';
 import { FiEdit } from "react-icons/fi";
@@ -11,16 +12,25 @@ import { BsThreeDots } from "react-icons/bs";
 
 const Today = () => {
 
-  const { TaskBox, setTaskBox } = useContext(TodoContext)
-  const { checkBox, setcheckBox } = useContext(TodoContext)
-
-  const todayTask = TaskBox.filter(task => task.TaskBoxTitle.toLowerCase() === "today")
+  const { TodayTaskBox, setTodayTaskBox, TodayCheckBox, setTodayCheckBox } = useContext(TodoContext)
+  const { searchQuery } = useContext(TodoContext)
+  
+  const [IsModalOpen, setIsModalOpen] = useState(false)
+  
+  // Filter today tasks based on search query
+  const filteredTodayTask = TodayTaskBox.filter(task =>
+    task.TaskBoxTitle.toLowerCase().includes(searchQuery.toLowerCase())
+  )
+  
+  const filteredCheckBox = TodayCheckBox.filter(task =>
+    task.TaskName && task.TaskName.toLowerCase().includes(searchQuery.toLowerCase())
+  )
 
 
   const handleNewTaskBox = (TaskBoxTitle) => {
     const newBox = { id: Date.now(), TaskBoxTitle, };
-    setTaskBox((prevTaskBox) => [...prevTaskBox, newBox])
-    console.log("Add new Task box: ", newBox)
+    setTodayTaskBox((prevTaskBox) => [...prevTaskBox, newBox])
+    console.log("Add new Today Task box: ", newBox)
   }
 
 
@@ -31,39 +41,40 @@ const Today = () => {
     }
 
     const newTask = { id: Date.now(), taskBoxId, TaskName, };
-    setcheckBox((prevcheckBox) => [...prevcheckBox, newTask]);
+    setTodayCheckBox((prevcheckBox) => [...prevcheckBox, newTask]);
   };
 
 
   //To delete the taskbox
 
   const handleDeleteTaskBox = (id) => {
-    setTaskBox((prevTaskBox) => prevTaskBox.filter((box) => box.id !== id));
-    console.log("deleted task id: ", id)
+    setTodayTaskBox((prevTaskBox) => prevTaskBox.filter((box) => box.id !== id));
+    setTodayCheckBox((prevcheckBox) => prevcheckBox.filter(task => task && task.taskBoxId !== id))
+    console.log("deleted today task id: ", id)
   }
 
   const handleDeleteCheckBox = (taskId) => {
-    setcheckBox((prevcheckBox) => prevcheckBox.filter(task => task && task.id !== taskId))
+    setTodayCheckBox((prevcheckBox) => prevcheckBox.filter(task => task && task.id !== taskId))
   }
 
   // Handle the edit button
 
 
   const handleSaveEditTaskBox = (id, newTitle) => {
-    setTaskBox((prevTaskBox) => prevTaskBox.map((box) => box.id === id ? { ...box, TaskBoxTitle: newTitle } : box))
-    console.log("Edited task box with id: ", id, "New title: ", newTitle)
+    setTodayTaskBox((prevTaskBox) => prevTaskBox.map((box) => box.id === id ? { ...box, TaskBoxTitle: newTitle } : box))
+    console.log("Edited today task box with id: ", id, "New title: ", newTitle)
   }
 
 
   const handleEditCheckBox = (taskId, newTaskName) => {
-    setcheckBox((prevcheckBox) => prevcheckBox.map((task) => task && task.id === taskId ? { ...task, TaskName: newTaskName } : task))
+    setTodayCheckBox((prevcheckBox) => prevcheckBox.map((task) => task && task.id === taskId ? { ...task, TaskName: newTaskName } : task))
   }
 
   const handleCheckedTask = (taskId) => {
-    setcheckBox((prevcheckbox) => {
+    setTodayCheckBox((prevcheckbox) => {
       const updatedTask = prevcheckbox.map((task) => task.id === taskId ? { ...task, checked: !task.checked } : task)
-      console.log("Updated checkBox state:", updatedTask);
-      localStorage.setItem('checkBoxData', JSON.stringify(updatedTask))
+      console.log("Updated Today checkBox state:", updatedTask);
+      localStorage.setItem('TodayCheckBoxData', JSON.stringify(updatedTask))
       return updatedTask;
     });
   }
@@ -80,7 +91,7 @@ const Today = () => {
     const [IsAddingTask, setIsAddingTask] = useState(false);
     const [newTaskName, setnewTaskName] = useState("");
 
-    const taskForThisBox = checkBox.filter(
+    const taskForThisBox = TodayCheckBox.filter(
       (task) => task && task.taskBoxId === id
     );
 
@@ -178,17 +189,42 @@ const Today = () => {
 
   return (
     <>
-      <div className="text-3xl font-bold flex justify-center mt-3 text-gray-500 bg-gray-200 p-1 ml-3 mr-3  rounded-xl m-auto dark:bg-gray-700 dark:text-white " >Today Task</div>
+      <div className="h-full min-h-[90vh] w-full px-2 sm:px-4 md:px-6 overflow-y-auto">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 my-4 sm:my-6">
+          <div className="flex items-center gap-3 sm:gap-5">
+            <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold dark:text-white">Today</h1>
+            <span className="h-8 w-8 sm:h-10 sm:w-10 md:h-12 md:w-12 flex items-center justify-center text-xl sm:text-2xl md:text-4xl font-semibold border-2 rounded-md dark:border-gray-600 dark:text-white">{TodayCheckBox.length}</span>
+          </div>
+          <button 
+            className="w-full sm:w-auto px-4 py-2 sm:py-3 bg-purple-500 dark:bg-gradient-to-r from-blue-700 to-purple-700 rounded-lg text-base sm:text-lg font-semibold text-white dark:text-white cursor-pointer hover:bg-purple-600 dark:hover:bg-blue-600 transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-opacity-50"
+            onClick={() => setIsModalOpen(true)}
+          >
+            New List
+          </button>
+        </div>
+        <hr className="border-1 border-gray-300 dark:border-gray-600 mb-4 sm:mb-6"></hr>
 
-      {todayTask.length === 0 && (
+        <hr className="border-1 border-gray-300 dark:border-gray-600 mb-4 sm:mb-6"></hr>
+
+        {searchQuery && filteredTodayTask.length === 0 && (
+          <div className="flex flex-col items-center justify-center py-10">
+            <svg className="w-16 h-16 text-gray-400 dark:text-gray-600 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+            </svg>
+            <p className="text-gray-500 dark:text-gray-400 text-lg font-semibold">No tasks found matching "{searchQuery}"</p>
+            <p className="text-gray-400 dark:text-gray-500 text-sm mt-2">Try a different search term</p>
+          </div>
+        )}
+
+        {!searchQuery && TodayTaskBox.length === 0 && (
         <div className="flex flex-col items-center justify-center mx-auto my-10 max-w-xl p-6 bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700">
           <div className="flex flex-col items-center mb-6">
             <svg className="w-20 h-20 text-gray-400 dark:text-gray-500 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
             </svg>
-            <h2 className="text-xl font-bold mb-2 text-gray-700 dark:text-white">No Today Tasks Found</h2>
+            <h2 className="text-xl font-bold mb-2 text-gray-700 dark:text-white">No Today Tasks Yet</h2>
             <p className="text-gray-500 dark:text-gray-400 text-center max-w-md">
-              To get started with your daily planning, you need to create a list specifically for today's tasks.
+              This section is for your daily tasks. Tasks created here are separate from your Upcoming tasks.
             </p>
           </div>
 
@@ -199,25 +235,16 @@ const Today = () => {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
                 </svg>
               </div>
-              <span>Go to the <span className="font-semibold">Upcoming</span> section</span>
+              <span>Create task lists directly on this page using the <span className="font-semibold">+ Add</span> button</span>
             </div>
 
             <div className="flex items-center space-x-3 text-gray-600 dark:text-gray-300">
               <div className="flex justify-center items-center w-8 h-8 rounded-full bg-blue-100 dark:bg-blue-900 text-blue-500 flex-shrink-0">
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4"></path>
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                 </svg>
               </div>
-              <span>Click on <span className="font-semibold">New List</span> button</span>
-            </div>
-
-            <div className="flex items-center space-x-3 text-gray-600 dark:text-gray-300">
-              <div className="flex justify-center items-center w-8 h-8 rounded-full bg-blue-100 dark:bg-blue-900 text-blue-500 flex-shrink-0">
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
-                </svg>
-              </div>
-              <span>Name your list exactly <span className="px-2 py-1 bg-gray-100 dark:bg-gray-700 font-bold rounded">Today</span></span>
+              <span>Add individual tasks to each list</span>
             </div>
           </div>
 
@@ -225,21 +252,29 @@ const Today = () => {
             <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
             </svg>
-            <span>Your tasks will automatically appear here</span>
+            <span>Today tasks are separate from Upcoming tasks</span>
           </div>
         </div>
-      )}
-      
-      {todayTask.map(box => (
-        <NewList
-          key={box.id}
-          id={box.id}
-          TaskBoxTitle={box.TaskBoxTitle}
-          onDelete={handleDeleteTaskBox}
-          onSaveEdit={handleSaveEditTaskBox}
-          onAddTask={handleNewCheckBox} />
-      ))}
-
+        )}
+        
+        <div className="grid grid-cols-1 sm:grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6 h-auto pb-8">
+          {(searchQuery ? filteredTodayTask : TodayTaskBox).map(box => (
+            <NewList
+              key={box.id}
+              id={box.id}
+              TaskBoxTitle={box.TaskBoxTitle}
+              onDelete={handleDeleteTaskBox}
+              onSaveEdit={handleSaveEditTaskBox}
+              onAddTask={handleNewCheckBox} />
+          ))}
+        </div>
+        
+        <Modal
+          isOpen={IsModalOpen}
+          onClose={() => setIsModalOpen(false)}
+          onSave={handleNewTaskBox}
+        />
+      </div>
     </>
   )
 }
