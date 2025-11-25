@@ -5,19 +5,29 @@ export const TodoContext = createContext();
 
 // Provider Component
 export const TodoProvider = ({ children }) => {
-    // const [TaskBox, setTaskBox] = useState([]);
-    // const [checkBox, setcheckBox] = useState([]);
-        const [Hide, setHide] = useState(false)
+    const [Hide, setHide] = useState(false)
+    const [searchQuery, setSearchQuery] = useState("")
 
+    // Upcoming tasks - general task lists
     const [TaskBox, setTaskBox] = useState(() => {
-        const savedTasks = localStorage.getItem('TaskBoxData');
+        const savedTasks = localStorage.getItem('UpcomingTaskBoxData');
         return savedTasks ? JSON.parse(savedTasks) : [];
     })
 
-
     const [checkBox, setcheckBox] = useState(() => {
-        const savedChecks = localStorage.getItem('checkBoxData');
+        const savedChecks = localStorage.getItem('UpcomingCheckBoxData');
         return savedChecks ? JSON.parse(savedChecks) : [];
+    });
+
+    // Today tasks - separate storage for today's tasks
+    const [TodayTaskBox, setTodayTaskBox] = useState(() => {
+        const savedTodayTasks = localStorage.getItem('TodayTaskBoxData');
+        return savedTodayTasks ? JSON.parse(savedTodayTasks) : [];
+    })
+
+    const [TodayCheckBox, setTodayCheckBox] = useState(() => {
+        const savedTodayChecks = localStorage.getItem('TodayCheckBoxData');
+        return savedTodayChecks ? JSON.parse(savedTodayChecks) : [];
     });
 
     const [Lists, setLists] = useState(() => {
@@ -26,17 +36,27 @@ export const TodoProvider = ({ children }) => {
     });
 
 
+    // Save Upcoming tasks to localStorage
     useEffect(() => {
-        console.log("saved TaskBox: ", TaskBox)
-        localStorage.setItem('TaskBoxData', JSON.stringify(TaskBox))
-
+        console.log("saved Upcoming TaskBox: ", TaskBox)
+        localStorage.setItem('UpcomingTaskBoxData', JSON.stringify(TaskBox))
     }, [TaskBox])
 
+    useEffect(() => {
+        console.log("saved Upcoming checkbox: ", checkBox)
+        localStorage.setItem('UpcomingCheckBoxData', JSON.stringify(checkBox))
+    }, [checkBox])
+
+    // Save Today tasks to localStorage
+    useEffect(() => {
+        console.log("saved Today TaskBox: ", TodayTaskBox)
+        localStorage.setItem('TodayTaskBoxData', JSON.stringify(TodayTaskBox))
+    }, [TodayTaskBox])
 
     useEffect(() => {
-        console.log("saved checkbox: ", checkBox)
-        localStorage.setItem('checkBoxData', JSON.stringify(checkBox))
-    }, [checkBox])
+        console.log("saved Today checkbox: ", TodayCheckBox)
+        localStorage.setItem('TodayCheckBoxData', JSON.stringify(TodayCheckBox))
+    }, [TodayCheckBox])
 
     useEffect(() => {
         console.log('Saving to localStorage:', Lists);
@@ -44,7 +64,11 @@ export const TodoProvider = ({ children }) => {
     }, [Lists])
 
     return (
-        <TodoContext.Provider value={{ TaskBox, setTaskBox, checkBox, setcheckBox, Lists, setLists, Hide, setHide }}>
+        <TodoContext.Provider value={{ 
+            TaskBox, setTaskBox, checkBox, setcheckBox, 
+            TodayTaskBox, setTodayTaskBox, TodayCheckBox, setTodayCheckBox,
+            Lists, setLists, Hide, setHide, searchQuery, setSearchQuery 
+        }}>
             {children}
         </TodoContext.Provider>
     );
