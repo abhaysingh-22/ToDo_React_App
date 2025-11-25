@@ -13,8 +13,18 @@ const Upcoming = () => {
     const { TaskBox, setTaskBox } = useContext(TodoContext)
     const { checkBox, setcheckBox } = useContext(TodoContext)
     const { Hide, setHide } = useContext(TodoContext)
+    const { searchQuery } = useContext(TodoContext)
 
     const [IsModalOpen, setIsModalOpen] = useState(false)
+
+    // Filter TaskBox and checkBox based on search query
+    const filteredTaskBox = TaskBox.filter(box =>
+        box.TaskBoxTitle.toLowerCase().includes(searchQuery.toLowerCase())
+    )
+    
+    const filteredCheckBox = checkBox.filter(task =>
+        task.TaskName.toLowerCase().includes(searchQuery.toLowerCase())
+    )
 
     const handleNewTaskBox = (TaskBoxTitle) => {
         const newBox = { id: Date.now(), TaskBoxTitle, };
@@ -242,13 +252,23 @@ const Upcoming = () => {
                 </div>
                 <hr className="border-1 border-gray-300 dark:border-gray-600 mb-4 sm:mb-6"></hr>
                 
-                {TaskBox.length === 0 && (
+                {searchQuery && filteredTaskBox.length === 0 && (
+                    <div className="flex flex-col items-center justify-center py-10">
+                        <svg className="w-16 h-16 text-gray-400 dark:text-gray-600 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                        </svg>
+                        <p className="text-gray-500 dark:text-gray-400 text-lg font-semibold">No tasks found matching "{searchQuery}"</p>
+                        <p className="text-gray-400 dark:text-gray-500 text-sm mt-2">Try a different search term</p>
+                    </div>
+                )}
+                
+                {!searchQuery && TaskBox.length === 0 && (
                     <div className="flex flex-col items-center justify-center h-[70vh] w-full text-center px-4 py-6">
                         <div className="mb-4 flex flex-col items-center">
                             <svg className="w-16 h-16 sm:w-20 sm:h-20 md:w-24 md:h-24 text-gray-400 dark:text-gray-600 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"></path>
                             </svg>
-                            <h1 className="text-xl sm:text-2xl font-bold mb-2 dark:text-white">Welcome to Study Monk</h1>
+                            <h1 className="text-xl sm:text-2xl font-bold mb-2 dark:text-white">Welcome to DayStacks</h1>
                             <h2 className="text-base sm:text-lg font-bold dark:text-white">No Lists Yet</h2>
                         </div>
                         <p className="text-gray-600 dark:text-gray-400 mb-6 max-w-sm sm:max-w-md">
@@ -267,7 +287,7 @@ const Upcoming = () => {
                 )}
                 
                 <div className="grid grid-cols-1 sm:grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6 h-auto pb-8">
-                    {TaskBox.map((box) => (
+                    {filteredTaskBox.map((box) => (
                         <NewList
                             key={box.id}
                             id={box.id}
