@@ -17,7 +17,6 @@ import { list } from "postcss";
 import { GiHidden } from "react-icons/gi";
 import AddNewListModal from "./AddNewListModal";
 import DarkModeToggle from "./DarkModeToggle";
-import ChatBot from "./chatbot";
 
 const uniqueID = uuidv4();
 // import './index.css'
@@ -26,21 +25,18 @@ const Left = () => {
 
     const { TaskBox, setTaskBox } = useContext(TodoContext)
     const { checkBox, setcheckBox } = useContext(TodoContext)
+    const { TodayCheckBox } = useContext(TodoContext)
     const { Lists, setLists } = useContext(TodoContext)
     const { Hide, setHide } = useContext(TodoContext)
+    const { searchQuery, setSearchQuery } = useContext(TodoContext)
     console.log("Lists", Lists)
     const [selectedDiv, setselectedDiv] = useState(null)
     const [isModalOpen, setIsModalOpen] = useState(false);
-    const [Query, setQuery] = useState("")
     const [FilteredVideo, setFilteredVideo] = useState([])
-    // Filter TaskBox for tasks with title "today"
-    const todayTask = TaskBox.filter(task =>
-        task.TaskBoxTitle.toLowerCase() === "today"
-    );
 
     const searchVideo = () => {
         const SearchTask = Lists.filter(list =>
-            list.name.toLowerCase().includes(Query.toLowerCase())
+            list.name.toLowerCase().includes(searchQuery.toLowerCase())
         )
         setFilteredVideo(SearchTask)
     }
@@ -58,10 +54,10 @@ const Left = () => {
 
     useEffect(() => {
         searchVideo();
-    }, [Query, Lists]);
+    }, [searchQuery, Lists]);
 
     // Lists.push(SearchTask)
-    console.log("query", Query)
+    console.log("query", searchQuery)
     // console.log("SearchTask", SearchTask)
 
 
@@ -84,15 +80,6 @@ const Left = () => {
     }, []);
 
 
-
-
-
-    // Filter checkBox for tasks matching the IDs from todayTask
-    const filteredTask = checkBox.filter(checks =>
-        todayTask.some(task => task.id === checks.taskBoxId)
-    );
-
-    console.log("filtered task", filteredTask);
 
 
 
@@ -292,8 +279,8 @@ const Left = () => {
                             </div>
                             <div id="secondDiv" className="flex relative " >
                                 <input type="text" placeholder='Search' className=" dark:bg-gray-700 dark:text-white bg-gray-100 w-[100%] pl-10 h-[40px] outline-none rounded-md border-[2px] border-gray-200 dark:border-gray-600 text-lg font-semibold"
-                                    value={Query}
-                                    onChange={(e) => setQuery(e.target.value)}
+                                    value={searchQuery}
+                                    onChange={(e) => setSearchQuery(e.target.value)}
                                 />
                                 <IoSearch className=" absolute left-2 top-1/4 text-gray-500 text-[20px]  " />
                             </div>
@@ -301,7 +288,7 @@ const Left = () => {
                                 <h2 className="font-bold text-gray-600 dark:text-white " >TASKS</h2>
                                 <ul className="ml-2 mt-3 w-full flex flex-col gap-3 dark:text-white " >
                                     <TaskItems to="/" id={1} NOFTask={checkBox.length} Icon={<MdKeyboardDoubleArrowRight className="text-[25px]" />} Title="Upcoming" selectedDiv={selectedDiv} setselectedDiv={setselectedDiv} />
-                                    <TaskItems to={"/Today"} id={2} NOFTask={filteredTask.length} Icon={<FaListCheck />} Title="Today" selectedDiv={selectedDiv} setselectedDiv={setselectedDiv} />
+                                    <TaskItems to={"/Today"} id={2} NOFTask={TodayCheckBox.length} Icon={<FaListCheck />} Title="Today" selectedDiv={selectedDiv} setselectedDiv={setselectedDiv} />
                                     <TaskItems1 to="/Calendar" id={3} NOFTask={null} Icon={<FaCalendarAlt />} Title="Calendar" selectedDiv={selectedDiv} setselectedDiv={setselectedDiv} />
                                     {/* <TaskItems1 to="/StickyWall" id={4} NOFTask={null} Icon={<FaNoteSticky />} Title="Sticky Wall" selectedDiv={selectedDiv} setselectedDiv={setselectedDiv} /> */}
                                 </ul>
