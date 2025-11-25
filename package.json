@@ -31,7 +31,7 @@
     "tailwind-scrollbar-hide": "^2.0.0",
     "tinymce": "^7.6.0",
     "uuid": "^11.0.3",
-    "vite": "^5.4.10"
+    "vite": "^7.2.4"
   },
   "devDependencies": {
     "@eslint/js": "^9.13.0",
