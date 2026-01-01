@@ -1,12 +1,9 @@
 import React, { useState, useRef, useContext } from 'react'
 import { TodoContext } from '../TodoContext';
 import Modal from './Modal';
-
-import Upcoming from './Upcoming';
 import { FiEdit } from "react-icons/fi";
 import { MdAdd } from "react-icons/md";
 import { RxCross2 } from "react-icons/rx";
-
 import { BsThreeDots } from "react-icons/bs";
 
 
@@ -17,14 +14,18 @@ const Today = () => {
   
   const [IsModalOpen, setIsModalOpen] = useState(false)
   
-  // Filter today tasks based on search query
-  const filteredTodayTask = TodayTaskBox.filter(task =>
-    task.TaskBoxTitle.toLowerCase().includes(searchQuery.toLowerCase())
-  )
-  
-  const filteredCheckBox = TodayCheckBox.filter(task =>
-    task.TaskName && task.TaskName.toLowerCase().includes(searchQuery.toLowerCase())
-  )
+  // Filter today tasks based on search query from context
+  const filteredTodayTask = TodayTaskBox.filter(box => {
+    // Show box if title matches
+    if (box.TaskBoxTitle.toLowerCase().includes(searchQuery.toLowerCase())) {
+      return true;
+    }
+    // Show box if any of its tasks match
+    const boxTasks = TodayCheckBox.filter(task => task && task.taskBoxId === box.id);
+    return boxTasks.some(task => 
+      task.TaskName && task.TaskName.toLowerCase().includes(searchQuery.toLowerCase())
+    );
+  })
 
 
   const handleNewTaskBox = (TaskBoxTitle) => {
@@ -85,14 +86,15 @@ const Today = () => {
 
 
 
-  const NewList = ({ TaskBoxTitle, id, onDelete, onEdit, onSaveEdit, onAddTask, tasks, setcheckBox }) => {
+  const NewList = ({ TaskBoxTitle, id, onDelete, onEdit, onSaveEdit, onAddTask, tasks, setcheckBox, searchQuery, TodayCheckBox }) => {
     const [IsEditing, setIsEditing] = useState(false)
     const [newTitle, setnewTitle] = useState(TaskBoxTitle)
     const [IsAddingTask, setIsAddingTask] = useState(false);
     const [newTaskName, setnewTaskName] = useState("");
 
     const taskForThisBox = TodayCheckBox.filter(
-      (task) => task && task.taskBoxId === id
+      (task) => task && task.taskBoxId === id && 
+      (!searchQuery || task.TaskName?.toLowerCase().includes(searchQuery.toLowerCase()))
     );
 
 
@@ -126,7 +128,7 @@ const Today = () => {
               onBlur={handleAddTask} onKeyDown={(e) => { if (e.key === 'Enter') e.preventDefault(), handleAddTask() }} placeholder='Enter new Task' autoFocus className=" text-xl pl-2 outline-none  w-full dark:bg-gray-700 dark:text-white " />
           ) : (
             <div className='flex w-full gap-4 pr-4 pl-1 font-semibold text-gray-500 h-10 items-center rounded-md justify-between ' >
-              <button onClick={() => setIsAddingTask(true)} autoFocus className='flex w-full gap-4  outline-none' >
+              <button onClick={() => setIsAddingTask(true)} className='flex w-full gap-4  outline-none' >
                 <p className='flex gap-3 dark:text-white' ><MdAdd className="text-[25px] text-gray-500 dark:text-white" />Add New Task</p>
               </button>
               <BsThreeDots className={`cursor-pointer text-3xl dark:text-white`} />
@@ -193,7 +195,7 @@ const Today = () => {
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 my-4 sm:my-6">
           <div className="flex items-center gap-3 sm:gap-5">
             <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold dark:text-white">Today</h1>
-            <span className="h-8 w-8 sm:h-10 sm:w-10 md:h-12 md:w-12 flex items-center justify-center text-xl sm:text-2xl md:text-4xl font-semibold border-2 rounded-md dark:border-gray-600 dark:text-white">{TodayCheckBox.length}</span>
+            <span className="h-8 w-8 sm:h-10 sm:w-10 md:h-12 md:w-12 flex items-center justify-center text-xl sm:text-2xl md:text-4xl font-semibold border-2 rounded-md dark:border-gray-600 dark:text-white">{TodayCheckBox.filter(task => !task.checked).length}</span>
           </div>
           <button 
             className="w-full sm:w-auto px-4 py-2 sm:py-3 bg-purple-500 dark:bg-gradient-to-r from-blue-700 to-purple-700 rounded-lg text-base sm:text-lg font-semibold text-white dark:text-white cursor-pointer hover:bg-purple-600 dark:hover:bg-blue-600 transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-opacity-50"
@@ -257,7 +259,7 @@ const Today = () => {
         </div>
         )}
         
-        <div className="grid grid-cols-1 sm:grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6 h-auto pb-8">
+        <div className="grid grid-cols-1 sm:grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6 h-auto pb-8 items-start">
           {(searchQuery ? filteredTodayTask : TodayTaskBox).map(box => (
             <NewList
               key={box.id}
@@ -265,7 +267,10 @@ const Today = () => {
               TaskBoxTitle={box.TaskBoxTitle}
               onDelete={handleDeleteTaskBox}
               onSaveEdit={handleSaveEditTaskBox}
-              onAddTask={handleNewCheckBox} />
+              onAddTask={handleNewCheckBox}
+              searchQuery={searchQuery}
+              TodayCheckBox={TodayCheckBox}
+            />
           ))}
         </div>
         
