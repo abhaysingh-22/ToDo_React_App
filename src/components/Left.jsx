@@ -1,45 +1,72 @@
-import React, { useContext, useMemo, useRef } from "react";
+import React, { useContext, useMemo, useRef, useLayoutEffect } from "react";
 import { TodoContext } from "../TodoContext";
 import { Link } from 'react-router-dom';
 import { useState, useEffect } from "react";
 import { v4 as uuidv4 } from 'uuid';
 import { RxHamburgerMenu } from "react-icons/rx";
 import { FaListCheck } from "react-icons/fa6";
-import { MdKeyboardDoubleArrowRight } from "react-icons/md";
 import { FaCalendarAlt } from "react-icons/fa";
-import { FaNoteSticky } from "react-icons/fa6";
 import { IoSearch } from "react-icons/io5";
 import { MdAdd } from "react-icons/md";
-import { IoSettings } from "react-icons/io5";
-import { FaSignOutAlt } from "react-icons/fa";
 import { RxCross2 } from "react-icons/rx";
-import { list } from "postcss";
-import { GiHidden } from "react-icons/gi";
 import AddNewListModal from "./AddNewListModal";
 import DarkModeToggle from "./DarkModeToggle";
 
 const uniqueID = uuidv4();
-// import './index.css'
 
 const Left = () => {
 
-    const { TaskBox, setTaskBox } = useContext(TodoContext)
-    const { checkBox, setcheckBox } = useContext(TodoContext)
     const { TodayCheckBox } = useContext(TodoContext)
     const { Lists, setLists } = useContext(TodoContext)
     const { Hide, setHide } = useContext(TodoContext)
-    const { searchQuery, setSearchQuery } = useContext(TodoContext)
-    console.log("Lists", Lists)
+    const { searchQuery: contextSearchQuery, setSearchQuery } = useContext(TodoContext)
+
     const [selectedDiv, setselectedDiv] = useState(null)
     const [isModalOpen, setIsModalOpen] = useState(false);
-    const [FilteredVideo, setFilteredVideo] = useState([])
+    const [localSearchQuery, setLocalSearchQuery] = useState("");
 
-    const searchVideo = () => {
-        const SearchTask = Lists.filter(list =>
-            list.name.toLowerCase().includes(searchQuery.toLowerCase())
+    // --- Focus-stable search input ---
+    const searchInputRef = useRef(null);
+    const searchHadFocusRef = useRef(false);
+
+    // If something in the app steals focus on each render, this puts it back.
+    useLayoutEffect(() => {
+        if (!searchHadFocusRef.current) return;
+        const el = searchInputRef.current;
+        if (!el) return;
+
+        // Only refocus if we lost it
+        if (document.activeElement !== el) {
+            el.focus({ preventScroll: true });
+
+            // Keep caret at end (common expected behavior for search)
+            const len = el.value?.length ?? 0;
+            try {
+                el.setSelectionRange(len, len);
+            } catch {
+                // ignore (some inputs/browsers can throw)
+            }
+        }
+    }, [localSearchQuery]);
+
+    const handleSearchInput = (e) => {
+        setLocalSearchQuery(e.target.value);
+    };
+
+    // Sync sidebar search to global context (used by Today filtering)
+    useEffect(() => {
+        const id = setTimeout(() => {
+            setSearchQuery(localSearchQuery);
+        }, 0);
+        return () => clearTimeout(id);
+    }, [localSearchQuery, setSearchQuery]);
+
+    const FilteredVideo = useMemo(() => {
+        if (!localSearchQuery.trim()) return Lists;
+        return Lists.filter(list =>
+            list.name.toLowerCase().includes(localSearchQuery.toLowerCase())
         )
-        setFilteredVideo(SearchTask)
-    }
+    }, [Lists, localSearchQuery]);
 
 
     // Helper function to generate a random color
@@ -51,16 +78,6 @@ const Left = () => {
         }
         return color;
     };
-
-    useEffect(() => {
-        searchVideo();
-    }, [searchQuery, Lists]);
-
-    // Lists.push(SearchTask)
-    console.log("query", searchQuery)
-    // console.log("SearchTask", SearchTask)
-
-
 
     // set dynamic height for dynamic content
     const [height, setHeight] = useState(0);
@@ -80,33 +97,6 @@ const Left = () => {
     }, []);
 
 
-
-
-
-    // const handleAddNewList = (name, SiteUrl) => {
-    //     try {
-    //         const url = new URL(SiteUrl);
-    //         let embedUrl = SiteUrl;
-
-    //         if (url.hostname === "www.youtube.com" || url.hostname === "youtube.com") {
-    //             const videoId = url.searchParams.get("v");
-    //             if (videoId) {
-    //                 embedUrl = `https://www.youtube.com/embed/${videoId}`;
-    //             }
-    //         } else if (url.hostname === "youtu.be") {
-    //             embedUrl = `https://www.youtube.com/embed/${url.pathname.slice(1)}`;
-    //         }
-
-    //         const newList = { id: Date.now(), name, SiteUrl: embedUrl };
-    //         setLists((prevLists) => [...prevLists, newList]);
-    //         console.log("Added new list:", newList);
-    //     } catch (error) {
-    //         console.error("Invalid URL format:", error);
-    //         alert("Please enter a valid URL.");
-    //     }
-    // };
-
-
     const handleAddNewList = (name, SiteUrl) => {
         try {
             const url = new URL(SiteUrl);
@@ -119,7 +109,6 @@ const Left = () => {
                 const videoId = url.searchParams.get("v");
                 const playlistId = url.searchParams.get("list");
 
-                // Playlist with or without a specific video
                 if (playlistId) {
                     embedUrl = `https://www.youtube.com/embed/videoseries?list=${playlistId}`;
                 } else if (videoId) {
@@ -148,7 +137,6 @@ const Left = () => {
 
     const handleDeleteSite = (id) => {
         setLists((previousSite) => previousSite.filter(list => list.id != id))
-
     }
 
 
@@ -220,7 +208,6 @@ const Left = () => {
                 if (containerRef.current) {
                     const parentHeight = containerRef.current.offsetHeight;
                     const iconsSection = containerRef.current.querySelector('div:first-child')?.offsetHeight || 0;
-                    // Calculate available space (subtract icon section height plus some padding)
                     const availableHeight = parentHeight - iconsSection - 20;
                     setContentHeight(`${availableHeight}px`);
                 }
@@ -237,8 +224,7 @@ const Left = () => {
                     <div className="flex flex-col items-center gap-2">
                         <RxHamburgerMenu onClick={() => setHide(!Hide)} className="text-3xl cursor-pointer mb-3 hover:text-gray-500 " />
                         <DarkModeToggle />
-                        <Link to="/" ><MdKeyboardDoubleArrowRight className="text-3xl mb-3 hover:text-gray-500" /></Link>
-                        <Link to="/Today" ><FaListCheck className="text-3xl mb-3 hover:text-gray-500 " /></Link>
+                        <Link to="/" ><FaListCheck className="text-3xl mb-3 hover:text-gray-500 " /></Link>
                         <Link to="/Calendar" ><FaCalendarAlt className="text-3xl mb-3 hover:text-gray-500" /></Link>
                         <button onClick={() => setIsModalOpen(true)} className="flex items-center justify-center cursor-pointer bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-white rounded-md p-1 hover:bg-gray-200 dark:hover:bg-gray-900 transition-all duration-300">
                             <MdAdd className="text-2xl" />
@@ -278,19 +264,26 @@ const Left = () => {
                                 </div>
                             </div>
                             <div id="secondDiv" className="flex relative " >
-                                <input type="text" placeholder='Search' className=" dark:bg-gray-700 dark:text-white bg-gray-100 w-[100%] pl-10 h-[40px] outline-none rounded-md border-[2px] border-gray-200 dark:border-gray-600 text-lg font-semibold"
-                                    value={searchQuery}
-                                    onChange={(e) => setSearchQuery(e.target.value)}
+                                <input
+                                    ref={searchInputRef}
+                                    type="text"
+                                    placeholder="Search"
+                                    className="dark:bg-gray-700 dark:text-white bg-gray-100 w-[100%] pl-10 h-[40px] outline-none rounded-md border-[2px] border-gray-200 dark:border-gray-600 text-lg font-semibold"
+                                    value={localSearchQuery}
+                                    onChange={handleSearchInput}
+                                    onFocus={() => { searchHadFocusRef.current = true; }}
+                                    onBlur={() => { searchHadFocusRef.current = false; }}
+                                    onKeyDown={(e) => { e.stopPropagation(); }}
+                                    onKeyUp={(e) => { e.stopPropagation(); }}
+                                    onClick={(e) => { e.stopPropagation(); }}
                                 />
-                                <IoSearch className=" absolute left-2 top-1/4 text-gray-500 text-[20px]  " />
+                                <IoSearch className="absolute left-2 top-1/4 text-gray-500 text-[20px]" />
                             </div>
                             <div id="thirdDiv" className=" mt-4 flex flex-col items-center" >
                                 <h2 className="font-bold text-gray-600 dark:text-white " >TASKS</h2>
                                 <ul className="ml-2 mt-3 w-full flex flex-col gap-3 dark:text-white " >
-                                    <TaskItems to="/" id={1} NOFTask={checkBox.length} Icon={<MdKeyboardDoubleArrowRight className="text-[25px]" />} Title="Upcoming" selectedDiv={selectedDiv} setselectedDiv={setselectedDiv} />
-                                    <TaskItems to={"/Today"} id={2} NOFTask={TodayCheckBox.length} Icon={<FaListCheck />} Title="Today" selectedDiv={selectedDiv} setselectedDiv={setselectedDiv} />
-                                    <TaskItems1 to="/Calendar" id={3} NOFTask={null} Icon={<FaCalendarAlt />} Title="Calendar" selectedDiv={selectedDiv} setselectedDiv={setselectedDiv} />
-                                    {/* <TaskItems1 to="/StickyWall" id={4} NOFTask={null} Icon={<FaNoteSticky />} Title="Sticky Wall" selectedDiv={selectedDiv} setselectedDiv={setselectedDiv} /> */}
+                                    <TaskItems to="/" id={1} NOFTask={TodayCheckBox.length} Icon={<FaListCheck />} Title="Today" selectedDiv={selectedDiv} setselectedDiv={setselectedDiv} />
+                                    <TaskItems1 to="/Calendar" id={2} NOFTask={null} Icon={<FaCalendarAlt />} Title="Calendar" selectedDiv={selectedDiv} setselectedDiv={setselectedDiv} />
                                 </ul>
                             </div>
                             <hr className=" border-t-[2px] border-gray-200 dark:border-gray-500" />
@@ -300,7 +293,6 @@ const Left = () => {
                                     id={6} Title={"Add New Video/Website"} Icon={<MdAdd className="text-[25px] text-gray-500 dark:text-white" />} />
                                 <div className="w-full overflow-y-auto" >
                                     <ul className="mt-3 flex flex-col gap-3 w-full overflow-y-auto " >
-                                        {/* <ListItems id={5} name="Personel" NOFTask={12} /> */}
                                         {Lists.length === 0 && (
                                             <div className="flex flex-col items-center justify-center py-5 px-2 bg-gray-50 dark:bg-gray-700 rounded-lg border border-gray-200 dark:border-gray-600">
                                                 <svg className="w-16 h-16 text-gray-400 dark:text-gray-500 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
@@ -330,28 +322,13 @@ const Left = () => {
                                                 </div>
                                             </div>
                                         )}
-                                        {/* {Lists.map((site) => (
-                                            <ListItems to={`/web/${site.name}`} key={site.id} name={site.name} id={site.id} />
-                                            ))} */}
                                         {FilteredVideo.map((site) => (
-
                                             <ListItems to={`/web/${site.name}`} key={site.id} name={site.name} id={site.id} />
                                         ))}
                                     </ul>
                                 </div>
                             </div>
-                            {/* <hr className=" border-t-[2px] border-gray-200" /> */}
-
                         </div>
-                        {/* <div className="footer ml-3 mb-3 flex flex-col gap-3">
-                            <div>
-                                <div className={`flex items-center gap-4 text-gray-500 font-semibold p-[5px] box-border rounded-md cursor-pointer  hover:bg-gray-200 ${selectedDiv === 7 ? 'bg-gray-200' : 'bg-gray-100'}  transition-all duration-300`} onClick={() => setselectedDiv(7)}><IoSettings />Settings</div>
-                            </div>
-                            <div>
-                                <div className={`flex items-center gap-4 text-gray-500 font-semibold p-[5px] box-border rounded-md cursor-pointer  hover:bg-gray-200 ${selectedDiv === 8 ? 'bg-gray-200' : 'bg-gray-100'} hover:bg-gray-200 transition-all duration-300 `} onClick={() => setselectedDiv(8)}><FaSignOutAlt />Log out</div>
-                            </div>
-
-                        </div> */}
                     </div>
                 </div>
             </div>
